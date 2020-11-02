@@ -173,6 +173,59 @@ public abstract class S7Connection {
 
 	abstract public int exchange(PDU p1) throws IOException;
 
+	public int readBits(
+			int area,
+			int DBnum,
+			int start,
+			int len,
+			byte[] buffer) throws IOException {
+		int res = 0;
+		try {
+			semaphore.enter();
+			//		System.out.println("readBytes");
+			PDU p1 = new PDU(msgOut, PDUstartOut);
+			p1.initReadRequest();
+			p1.addBitVarToReadRequest(area, DBnum, start, len);
+
+			res = exchange(p1);
+			if (res != Nodave.RESULT_OK) {
+				return res;
+			}
+			PDU p2 = new PDU(msgIn, PDUstartIn);
+			res = p2.setupReceivedPDU();
+			if ((Nodave.Debug & Nodave.DEBUG_CONN) != 0)
+				System.out.println(
+						"setupReceivedPDU() returned: " + res + Nodave.strerror(res));
+			if (res != Nodave.RESULT_OK) {
+				return res;
+			}
+
+			res = p2.testReadResult();
+			if ((Nodave.Debug & Nodave.DEBUG_CONN) != 0)
+				System.out.println(
+						"testReadResult() returned: " + res + Nodave.strerror(res));
+			if (res != Nodave.RESULT_OK) {
+				return res;
+			}
+			if (p2.udlen == 0) {
+				return Nodave.RESULT_CPU_RETURNED_NO_DATA;
+			}
+			/*
+				copy to user buffer and setup internal buffer pointers:
+			*/
+			if (buffer != null)
+				System.arraycopy(p2.mem, p2.udata, buffer, 0, p2.udlen);
+
+			dataPointer = p2.udata;
+			udata = p2.udata;
+			answLen = p2.udlen;
+		}
+		finally {
+			semaphore.leave();
+		}
+		return res;
+	}
+
 	public int readBytes(
 		int area,
 		int DBnum,

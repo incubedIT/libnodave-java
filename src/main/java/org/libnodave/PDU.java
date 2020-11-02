@@ -5,6 +5,7 @@
  or  MPI adapter 6ES7 972-0CA11-0XAC.
  
  (C) Thomas Hergenhahn (thomas.hergenhahn@web.de) 2002.
+ (C) Christoph Thaller (c.thaller@incubedit.com) 2020. 
 
  Libnodave is free software; you can redistribute it and/or modify
  it under the terms of the GNU Library General Public License as published by
@@ -269,6 +270,8 @@ public class PDU {
 		if (mem[data + 1] == 4) { // bit data, length is in bits
 			valCount += 8 * values.length;
 		} else if (mem[data + 1] == 9) { // byte data, length is in bytes
+			valCount += values.length;
+		} else if (mem[data + 1] == 3) { // length is in bits and write bits
 			valCount += values.length;
 		} else {
 			if ((Nodave.Debug & Nodave.DEBUG_PDU) != 0)

@@ -1,1 +1,0 @@
-java -classpath ./:./comm.jar org.visual.tools.PageViewer s7_ppi.html

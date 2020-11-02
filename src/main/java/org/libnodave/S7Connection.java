@@ -5,6 +5,7 @@
  or  MPI adapter 6ES7 972-0CA11-0XAC.
  
  (C) Thomas Hergenhahn (thomas.hergenhahn@web.de) 2002.
+ (C) Christoph Thaller (c.thaller@incubedit.com) 2020.
 
  Libnodave is free software; you can redistribute it and/or modify
  it under the terms of the GNU Library General Public License as published by
@@ -21,6 +22,8 @@
  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  
 */
 package org.libnodave;
+
+import java.io.IOException;
 
 /**
  * 
@@ -168,58 +171,62 @@ public abstract class S7Connection {
 		return Nodave.SByte(msgIn, udata + pos);
 	}
 
-	abstract public int exchange(PDU p1);
+	abstract public int exchange(PDU p1) throws IOException;
 
 	public int readBytes(
 		int area,
 		int DBnum,
 		int start,
 		int len,
-		byte[] buffer) {
+		byte[] buffer) throws IOException {
 		int res = 0;
-		semaphore.enter();
-		//		System.out.println("readBytes");
-		PDU p1 = new PDU(msgOut, PDUstartOut);
-		p1.initReadRequest();
-		p1.addVarToReadRequest(area, DBnum, start, len);
+		try {
+			semaphore.enter();
+			//		System.out.println("readBytes");
+			PDU p1 = new PDU(msgOut, PDUstartOut);
+			p1.initReadRequest();
+			p1.addVarToReadRequest(area, DBnum, start, len);
 
-		res = exchange(p1);
-		if (res != Nodave.RESULT_OK) {
-			semaphore.leave();
-			return res;
-		}
-		PDU p2 = new PDU(msgIn, PDUstartIn);
-		res = p2.setupReceivedPDU();
-		if ((Nodave.Debug & Nodave.DEBUG_CONN) != 0)
+			res = exchange(p1);
+			if (res != Nodave.RESULT_OK) {
+				semaphore.leave();
+				return res;
+			}
+			PDU p2 = new PDU(msgIn, PDUstartIn);
+			res = p2.setupReceivedPDU();
+			if ((Nodave.Debug & Nodave.DEBUG_CONN) != 0)
+				System.out.println(
+					"setupReceivedPDU() returned: " + res + Nodave.strerror(res));
+			if (res != Nodave.RESULT_OK) {
+				semaphore.leave();
+				return res;
+			}
+
+			res = p2.testReadResult();
+			if ((Nodave.Debug & Nodave.DEBUG_CONN) != 0)
 			System.out.println(
-				"setupReceivedPDU() returned: " + res + Nodave.strerror(res));
-		if (res != Nodave.RESULT_OK) {
-			semaphore.leave();
-			return res;
-		}
+				"testReadResult() returned: " + res + Nodave.strerror(res));
+			if (res != Nodave.RESULT_OK) {
+				semaphore.leave();
+				return res;
+			}
+			if (p2.udlen == 0) {
+				semaphore.leave();
+				return Nodave.RESULT_CPU_RETURNED_NO_DATA;
+			}
+			/*
+				copy to user buffer and setup internal buffer pointers:
+			*/
+			if (buffer != null)
+				System.arraycopy(p2.mem, p2.udata, buffer, 0, p2.udlen);
 
-		res = p2.testReadResult();
-		if ((Nodave.Debug & Nodave.DEBUG_CONN) != 0)
-		System.out.println(
-			"testReadResult() returned: " + res + Nodave.strerror(res));
-		if (res != Nodave.RESULT_OK) {
+			dataPointer = p2.udata;
+			udata = p2.udata;
+			answLen = p2.udlen;
+			}
+		finally {
 			semaphore.leave();
-			return res;
 		}
-		if (p2.udlen == 0) {
-			semaphore.leave();
-			return Nodave.RESULT_CPU_RETURNED_NO_DATA;
-		}
-		/*
-			copy to user buffer and setup internal buffer pointers:
-		*/
-		if (buffer != null)
-			System.arraycopy(p2.mem, p2.udata, buffer, 0, p2.udlen);
-
-		dataPointer = p2.udata;
-		udata = p2.udata;
-		answLen = p2.udlen;
-		semaphore.leave();
 		return res;
 	}
 
@@ -248,33 +255,37 @@ public abstract class S7Connection {
 		int DBnum,
 		int start,
 		int len,
-		byte[] buffer) {
+		byte[] buffer) throws IOException {
 		int errorState = 0;
-		semaphore.enter();
-		PDU p1 = new PDU(msgOut, PDUstartOut);
+		try {
+			semaphore.enter();
+			PDU p1 = new PDU(msgOut, PDUstartOut);
 
-		//		p1.constructWriteRequest(area, DBnum, start, len, buffer);
-		p1.prepareWriteRequest();
-		p1.addVarToWriteRequest(area, DBnum, start, len, buffer);
+			//		p1.constructWriteRequest(area, DBnum, start, len, buffer);
+			p1.prepareWriteRequest();
+			p1.addVarToWriteRequest(area, DBnum, start, len, buffer);
 
-		errorState = exchange(p1);
+			errorState = exchange(p1);
 
-		if (errorState == 0) {
-			PDU p2 = new PDU(msgIn, PDUstartIn);
-			p2.setupReceivedPDU();
+			if (errorState == 0) {
+				PDU p2 = new PDU(msgIn, PDUstartIn);
+				p2.setupReceivedPDU();
 
-			if (p2.mem[p2.param + 0] == PDU.FUNC_WRITE) {
-				if (p2.mem[p2.data + 0] == (byte) 0xFF) {
-					if ((Nodave.Debug & Nodave.DEBUG_CONN) != 0)
-						System.out.println("writeBytes: success");
-					semaphore.leave();
-					return 0;
+				if (p2.mem[p2.param + 0] == PDU.FUNC_WRITE) {
+					if (p2.mem[p2.data + 0] == (byte) 0xFF) {
+						if ((Nodave.Debug & Nodave.DEBUG_CONN) != 0)
+							System.out.println("writeBytes: success");
+						semaphore.leave();
+						return 0;
+					}
+				} else {
+					errorState |= 4096;
 				}
-			} else {
-				errorState |= 4096;
 			}
 		}
-		semaphore.leave();
+		finally {
+			semaphore.leave();
+		}
 		return errorState;
 	}
 
@@ -286,7 +297,7 @@ public abstract class S7Connection {
 	public int disconnectPLC() {
 		return 0;
 	}
-	public int connectPLC() {
+	public int connectPLC() throws IOException {
 		return 0;
 	}
 
@@ -316,18 +327,18 @@ public abstract class S7Connection {
 		public void sendYOURTURN() {
 		}
 	*/
-	public int getResponse() {
+	public int getResponse() throws IOException {
 		return 0;
 	}
 
-	public int getPPIresponse() {
+	public int getPPIresponse() throws IOException {
 		return 0;
 	}
 
-	public int sendMsg(PDU p) {
+	public int sendMsg(PDU p) throws IOException {
 		return 0;
 	}
-	public void sendRequestData(int alt) {
+	public void sendRequestData(int alt) throws IOException {
 	}
 
 	//	int numResults;
@@ -344,7 +355,7 @@ public abstract class S7Connection {
 		If it's NULL you can get your data from the resultPointer in daveConnection long
 		as you do not send further requests.
 	*/
-	public ResultSet execReadRequest(PDU p) {
+	public ResultSet execReadRequest(PDU p) throws IOException {
 		PDU p2;
 		int errorState;
 		errorState = exchange(p);
@@ -419,7 +430,7 @@ public abstract class S7Connection {
 	/*
 		build the PDU for a PDU length negotiation    
 	*/
-	public int negPDUlengthRequest() {
+	public int negPDUlengthRequest() throws IOException {
 		int res;
 		PDU p = new PDU(msgOut, PDUstartOut);
 		byte pa[] =

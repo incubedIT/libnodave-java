@@ -5,6 +5,7 @@
  or  MPI adapter 6ES7 972-0CA11-0XAC.
  
  (C) Thomas Hergenhahn (thomas.hergenhahn@web.de) 2002.
+ (C) Christoph Thaller (c.thaller@incubedit.com) 2020.
 
  Libnodave is free software; you can redistribute it and/or modify
  it under the terms of the GNU Library General Public License as published by
@@ -21,13 +22,16 @@
  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  
 */
 package org.libnodave;
+
+import java.io.IOException;
+
 public class TCP243Connection extends TCPConnection {
 	
 	public TCP243Connection(PLCinterface ifa, int rack, int slot) {
 		super(ifa,0,0);
 	}
 	
-	public int connectPLC() {
+	public int connectPLC() throws IOException {
 		int res;
 		byte[] b4CP243 ={
 			(byte)0x11,

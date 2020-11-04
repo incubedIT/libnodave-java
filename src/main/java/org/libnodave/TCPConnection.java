@@ -5,6 +5,7 @@
  or  MPI adapter 6ES7 972-0CA11-0XAC.
  
  (C) Thomas Hergenhahn (thomas.hergenhahn@web.de) 2002.
+ (C) Christoph Thaller (c.thaller@incubedit.com) 2020.
 
  Libnodave is free software; you can redistribute it and/or modify
  it under the terms of the GNU Library General Public License as published by
@@ -21,6 +22,9 @@
  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  
 */
 package org.libnodave;
+
+import java.io.IOException;
+
 public class TCPConnection extends S7Connection {
 	int rack;
 	int slot;
@@ -33,7 +37,7 @@ public class TCPConnection extends S7Connection {
 		PDUstartOut = 7;
 	}
 	
-	protected int readISOPacket() {
+	protected int readISOPacket() throws IOException {
 		int res = iface.read(msgIn, 0, 4);
 		if (res == 4) {
 		    int len = 0x100 * msgIn[2] + msgIn[3];
@@ -42,7 +46,7 @@ public class TCPConnection extends S7Connection {
 		return res;
 	}
 	
-	protected int sendISOPacket(int size) {
+	protected int sendISOPacket(int size) throws IOException {
 		size += 4;
 		msgOut[0] = (byte)0x03;
 		msgOut[1] = (byte)0x0;
@@ -62,7 +66,7 @@ public class TCPConnection extends S7Connection {
 		iface.write(msgOut, 0, size);
 		return 0;
 	}
-	public int exchange(PDU p1) {
+	public int exchange(PDU p1) throws IOException {
 		int res;
 		PDU p2;
 		if ((Nodave.Debug & Nodave.DEBUG_EXCHANGE) != 0) {
@@ -81,7 +85,7 @@ public class TCPConnection extends S7Connection {
 	 *  daveNewConnection and is not yet used.
 	 * (or reused for the same PLC ?)
 	*/
-	public int connectPLC() {
+	public int connectPLC() throws IOException {
 		int res;
 		byte[] b4 ={
 			(byte)0x11,

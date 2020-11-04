@@ -5,6 +5,7 @@
  or  MPI adapter 6ES7 972-0CA11-0XAC.
  
  (C) Thomas Hergenhahn (thomas.hergenhahn@web.de) 2002.
+ (C) Christoph Thaller (c.thaller@incubedit.com) 2020.
 
  Libnodave is free software; you can redistribute it and/or modify
  it under the terms of the GNU Library General Public License as published by
@@ -66,14 +67,11 @@ public class PLCinterface {
 		}
 	}
 
-	public void write(byte[] b, int start, int len) {
+	public void write(byte[] b, int start, int len) throws IOException {
 		if ((Nodave.Debug & Nodave.DEBUG_IFACE) != 0)
 			Nodave.dump("Interface.write", b, start, len);
-		try {
-			out.write(b, start, len);
-		} catch (IOException e) {
-			System.err.println("Interface.write: " + e);
-		}
+
+		out.write(b, start, len);
 	}
 /*
 	public int read(byte[] b, int start, int len) {
@@ -126,39 +124,34 @@ public class PLCinterface {
 */
 
 
-	public int read(byte[] b, int start, int len) {
+	public int read(byte[] b, int start, int len) throws IOException {
 		int res;
 		if ((Nodave.Debug & Nodave.DEBUG_IFACE) != 0)
 			System.out.println("Interface.read");
-		try {
-			int retry = 0;
-			while ((in.available() <= 0) && (retry < 10)) {
-				try {
-					if(retry>0)Thread.sleep(timeout / 200);
-					retry++;
-					if ((Nodave.Debug & Nodave.DEBUG_IFACE) != 0)
-						System.out.println("Interface.read delayed");
-				} catch (InterruptedException e) {
-					System.out.println(e);
-				}
+		int retry = 0;
+		while ((in.available() <= 0) && (retry < 10)) {
+			try {
+				if(retry>0)Thread.sleep(timeout / 200);
+				retry++;
+				if ((Nodave.Debug & Nodave.DEBUG_IFACE) != 0)
+					System.out.println("Interface.read delayed");
+			} catch (InterruptedException e) {
+				System.out.println(e);
 			}
-			res=0;
-			while ((in.available() > 0) && (len > 0)) {
-				//				if ((Nodave.Debug & Nodave.DEBUG_IFACE) != 0)
-				//				System.out.println("can read");
-				res = in.read(b, start, len);
-				start+=res;
-				len-=res;
-//				System.out.println(res+" bytes read");
-			}
-			if ((Nodave.Debug & Nodave.DEBUG_IFACE) != 0)
-    				System.out.println("got "+res+"bytes");
-			return res;
-//			return 0;
-		} catch (IOException e) {
-			System.out.println(e);
-			return 0;
 		}
+		res=0;
+		while ((in.available() > 0) && (len > 0)) {
+			//				if ((Nodave.Debug & Nodave.DEBUG_IFACE) != 0)
+			//				System.out.println("can read");
+			res = in.read(b, start, len);
+			start+=res;
+			len-=res;
+//				System.out.println(res+" bytes read");
+		}
+		if ((Nodave.Debug & Nodave.DEBUG_IFACE) != 0)
+				System.out.println("got "+res+"bytes");
+		return res;
+//			return 0;
 	}
 
 

@@ -68,7 +68,7 @@ public class TestISOTCP243 {
 	
 //	Nodave.debug=DebugAll; //^(Nodave.DEBUG_IFACE|Nodave.DEBUG_SPECIALCHARS);
  
- 	void run() {
+ 	void run() throws IOException {
 		OutputStream oStream = null;
 		InputStream iStream = null;
 
@@ -218,7 +218,7 @@ public class TestISOTCP243 {
 	static int useProtocol = Nodave.PROTOCOL_ISOTCP;
 	static int slot;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		int adrPos = 0;
 		if (args.length <= adrPos) {
 			usage();

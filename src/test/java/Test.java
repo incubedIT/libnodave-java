@@ -28,6 +28,7 @@ import org.libnodave.Nodave;
 import org.libnodave.PLCinterface;
 import org.libnodave.S7Connection;
 
+import java.io.IOException;
 import java.net.Socket;
 
 public class Test {
@@ -62,7 +63,7 @@ public class Test {
 	
 	static void extraTests(String[] args){};
 
-	void run() {
+	void run() throws IOException {
 		byte[] by;
 //		if (sock != null) {
 /*			
@@ -238,7 +239,7 @@ public class Test {
 	    }
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		evalArgs(args);
 		Test tp = new Test(args[adrPos]);
 		tp.run();

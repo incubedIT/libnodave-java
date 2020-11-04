@@ -52,7 +52,7 @@ public class TestISO extends Test {
 		}
 	}
 
-	void run() {
+	void run() throws IOException {
 		OutputStream oStream = null;
 		InputStream iStream = null;
 
@@ -94,7 +94,7 @@ public class TestISO extends Test {
 			System.out.println("Couldn't open connection");
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		if (args.length <= adrPos) {
 			usage();
 			System.exit(-1);

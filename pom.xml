@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.libnodave</groupId>
     <artifactId>libnodave</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.3</version>
 
     <dependencies>
         <dependency>
@@ -13,7 +13,7 @@
             <version>2.1.7</version>
         </dependency>
     </dependencies>
-         
+
     <distributionManagement>
         <repository>
             <id>github</id>
@@ -21,5 +21,19 @@
             <url>https://maven.pkg.github.com/incubedIT/libnodave-java</url>
         </repository>
     </distributionManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
 

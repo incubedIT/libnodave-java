@@ -365,7 +365,7 @@ public class PDU {
 		int res = Nodave.RESULT_CANNOT_EVALUATE_PDU;
 		if (mem[param] != FUNC_WRITE)
 			return Nodave.RESULT_UNEXPECTED_FUNC;
-		if ((mem[data] == 255)) {
+		if ((mem[data] == (byte)255)) {
 			res = Nodave.RESULT_OK;
 		} else
 			res = mem[data];

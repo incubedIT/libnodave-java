@@ -242,7 +242,6 @@ public abstract class S7Connection {
 
 			res = exchange(p1);
 			if (res != Nodave.RESULT_OK) {
-				semaphore.leave();
 				return res;
 			}
 			PDU p2 = new PDU(msgIn, PDUstartIn);
@@ -251,7 +250,6 @@ public abstract class S7Connection {
 				System.out.println(
 					"setupReceivedPDU() returned: " + res + Nodave.strerror(res));
 			if (res != Nodave.RESULT_OK) {
-				semaphore.leave();
 				return res;
 			}
 
@@ -260,11 +258,9 @@ public abstract class S7Connection {
 			System.out.println(
 				"testReadResult() returned: " + res + Nodave.strerror(res));
 			if (res != Nodave.RESULT_OK) {
-				semaphore.leave();
 				return res;
 			}
 			if (p2.udlen == 0) {
-				semaphore.leave();
 				return Nodave.RESULT_CPU_RETURNED_NO_DATA;
 			}
 			/*
@@ -281,23 +277,6 @@ public abstract class S7Connection {
 			semaphore.leave();
 		}
 		return res;
-	}
-
-	public PDU prepareReadRequest() {
-		int errorState = 0;
-		semaphore.enter();
-		PDU p1 = new PDU(msgOut, PDUstartOut);
-		p1.prepareReadRequest();
-		return p1;
-	}
-
-	// 2011.10.10 SC: added using read-like structure
-	public PDU prepareWriteRequest() {
-		//int errorState = 0;
-		semaphore.enter();
-		PDU p1 = new PDU(msgIn, PDUstartIn);
-		p1.prepareWriteRequest();
-		return p1;
 	}
 
 	public int writeBits(

@@ -40,9 +40,17 @@ public class TCPConnection extends S7Connection {
 	protected int readISOPacket() throws IOException {
 		int res = iface.read(msgIn, 0, 4);
 		if (res == 4) {
-		    int len = 0x100 * msgIn[2] + msgIn[3];
-		    res += iface.read(msgIn, 4, len);
-		} else return 0;
+			int len = (0x100 * msgIn[2] + msgIn[3]) - 4;
+			int bytesRead = iface.read(msgIn, 4, len);
+			res += bytesRead;
+
+			if (bytesRead != len) {
+				throw new IOException("Could not read ISO packet");
+			}
+		}
+		else {
+			return 0;
+		}
 		return res;
 	}
 	

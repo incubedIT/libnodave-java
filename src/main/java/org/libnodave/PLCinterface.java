@@ -125,33 +125,22 @@ public class PLCinterface {
 
 
 	public int read(byte[] b, int start, int len) throws IOException {
-		int res;
 		if ((Nodave.Debug & Nodave.DEBUG_IFACE) != 0)
 			System.out.println("Interface.read");
+
 		int retry = 0;
-		while ((in.available() <= 0) && (retry < 10)) {
-			try {
-				if(retry>0)Thread.sleep(timeout / 200);
-				retry++;
-				if ((Nodave.Debug & Nodave.DEBUG_IFACE) != 0)
-					System.out.println("Interface.read delayed");
-			} catch (InterruptedException e) {
-				System.out.println(e);
-			}
-		}
-		res=0;
-		while ((in.available() > 0) && (len > 0)) {
-			//				if ((Nodave.Debug & Nodave.DEBUG_IFACE) != 0)
-			//				System.out.println("can read");
-			res = in.read(b, start, len);
-			start+=res;
-			len-=res;
-//				System.out.println(res+" bytes read");
-		}
+		int totalBytes = 0;
+		do {
+			int numRead = in.read(b, start, len);
+			start += numRead;
+			len -= numRead;
+			totalBytes += numRead;
+		} while (len > 0 && ++retry < 10);
+
 		if ((Nodave.Debug & Nodave.DEBUG_IFACE) != 0)
-				System.out.println("got "+res+"bytes");
-		return res;
-//			return 0;
+				System.out.println("got "+ totalBytes + "bytes");
+
+		return totalBytes;
 	}
 
 
